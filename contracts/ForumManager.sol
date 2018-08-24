@@ -1,13 +1,15 @@
 pragma solidity ^0.4.24;
 
-import Topic from "./Topic.sol"
-import Question from "./Question.sol"
-import Answer from "./Answer.sol"
+import {Topic} from "./Topic.sol";
+import {Question} from "./Question.sol";
+import {Answer} from "./Answer.sol";
 
 contract ForumManager {
     
     // Forum Management
     address private owner;
+    bool public activeHalted;
+    bool public withdrawalHalted;
     mapping(address => bool) public admins;
     uint16 private numAdmins;
 
@@ -21,7 +23,6 @@ contract ForumManager {
     mapping(address => uint256) private holdings;
 
     mapping(address => bool) private blacklist;
-    mapping(address => bool) private probationList;
 
     // Question cost determination
     uint256 public numQuestions;
@@ -34,67 +35,108 @@ contract ForumManager {
     uint16 public topicRatio;
     uint16 public newUserFee;
 
+    constructor(uint16 valueRate, uint16 urgentRate, uint16 topicRate, uint16 newUserRate) public payable {
+        owner = msg.sender;
+        admins[owner] = true;
+        numAdmins = 1;
+        activeHalted = false;
+        withdrawalHalted = false;
+        baseValueRatio = valueRate;
+        baseUrgentRate = urgentRate;
+        topicRatio = topicRate;
+        newUserFee = newUserRate;
+    }
+
     modifier onlyOwner() {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "Only the owner may access this function");
         _;
     }
 
     modifier onlyAdmin() {
-        require(admins[msg.sender].length;
+        require(admins[msg.sender], "Only admins may access this function");
         _;
     }
 
     modifier onlyUser() {
-        require(usernames[msg.sender].length > 0);
+        require(usernames[msg.sender].length > 0, "Only users may access this function");
         _;
     }
 
     function makeTopic(bytes24 topicName) public payable onlyUser {
-        require(msg.value >= topicPrice());
-        address newTopic = (new Topic).value(msg.value)();
+        require(msg.value >= topicPrice(), "Not enough value sent to create a topic");
+        address newTopic = (new Topic).value(msg.value)(this);
         topics.push(newTopic);
         topicNames[newTopic] = topicName;
     }
 
-    function seeTopics() public view {
-
+    // Only to be called from web3
+    function getTopicName(address questionAddress) public view returns(bytes24) {
+        return topicNames[questionAddress];
     }
 
-    function checkHoldings() public view returns( uint256 userHoldings ) {
+    // Only to be called from web3
+    function getTopicAddresses() public view returns(address[]) {
+        return topics;
+    } 
 
+    function checkHoldings() public view onlyUser returns( uint256 userHoldings ) {
+        return holdings[msg.sender];
     }
 
-    function makeAdmin() public onlyOwner {
-
+    function enrollUser(address newUser, bytes32 username) public payable {
+        // They have sent a joining fee and are not already enrolled
+        require(msg.value >= joiningFee(), "Not enough value sent to create user");
+        require(usernames[newUser].length == 0, "User with this name already enrolled");
+        usernames[newUser] = username;
+        holdings[newUser] += msg.value;
     }
 
-    function removeAdmin() public onlyOwner {
-
+    function makeAdmin(address newAdmin) public onlyOwner {
+        // User should already be enrolled
+        require(usernames[newAdmin].length > 0, "User must be enrolled before they can be an admin");
+        admins[newAdmin] = true;
+        numAdmins += 1;
     }
 
-    function killTopic(bytes24 topicName, bool graceful) public onlyAdmin {
-
+    function removeAdmin(address toRemove) public onlyOwner {
+        require(admins[toRemove], "Address to remove must be an admin");
+        admins[toRemove] = false;
     }
 
-    function approveKill(bytes24 topicName) public onlyAdmin {
-
+    function isAdmin(address toCheck) public view returns(bool) {
+        return admins[toCheck];
     }
 
-    function blacklistUser(address userAddress, bool graceful) public onlyAdmin {
+    function haltTopic(address topicToHalt) public onlyAdmin {
+        Topic(topicToHalt).haltTopic();
+    }
 
+    function blacklistUser(address userAddress, bool maliciousUser) public onlyAdmin {
+        blacklist[userAddress] = true;
+        if (maliciousUser) holdings[userAddress] = 0;
     }
 
     function clearUser(address userAddress) public onlyAdmin {
-
+        blacklist[userAddress] = false;
     }
 
-    function killForum() public onlyOwner {
+    function haltForum() public onlyOwner {
+        activeHalted = true;
+    }
 
+    function haltAll() public onlyOwner {
+        activeHalted = true;
+        withdrawalHalted = true;
+    }
+
+    function unhaltAll() public onlyOwner {
+        activeHalted = false;
+        withdrawalHalted = false;
     }
 
     function questionPrice() public view returns(uint256) {
         // Average question cost * multiplier
-        return (questionValue / numQuestions) * (baseValueRation / 100)
+        return (questionValue / numQuestions) * (baseValueRatio / 100);
     }
 
     function urgentPrice() public view returns(uint256) {
