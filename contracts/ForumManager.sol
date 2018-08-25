@@ -26,7 +26,7 @@ contract ForumManager {
 
     // Question cost determination
     uint256 public numQuestions;
-    uint256 public questionValue;
+    uint256 public questionTotalValue;
 
     uint16 public baseValueRatio;
     uint16 public baseUrgentRate;
@@ -136,7 +136,7 @@ contract ForumManager {
 
     function questionPrice() public view returns(uint256) {
         // Average question cost * multiplier
-        return (questionValue / numQuestions) * (baseValueRatio / 100);
+        return (questionTotalValue / numQuestions) * (baseValueRatio / 100);
     }
 
     function urgentPrice() public view returns(uint256) {
