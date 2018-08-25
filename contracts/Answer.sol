@@ -41,17 +41,22 @@ contract Answer {
         _;
     }
 
-    modifier onlyQuestionOwner() {
-        require(msg.sender == questionOwner, "Can only be sent from the question owner");
+    modifier onlyQuestion() {
+        require(msg.sender == parentQuestion, "Can only be sent from the question contract");
         _;
     }
 
-    function accept() public onlyQuestionOwner {
+    modifier onlyQuestionOwner() {
+        require(msg.sender == questionOwner, "Can only be sent from the question owner");
+        _;  
+    }
+
+    function accept() public onlyQuestion {
         accepted = true;
         acceptedAt = now;
     }
 
-    function reject() public onlyQuestionOwner {
+    function reject() public onlyQuestion {
         rejected = true;
         rejectedAt = now;
     }
@@ -65,8 +70,8 @@ contract Answer {
         contestedAt = now;
     }
 
-    function withdrawalValue() public onlyOwner {
-        
+    function withdrawValue() public onlyQuestion {
+        Question(parentQuestion).transferAnswerFunds.value(address(this).balance)();
     }
 
     function getTitle() public view returns(string) {

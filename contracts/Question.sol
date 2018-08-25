@@ -15,6 +15,7 @@ contract Question {
 
     uint256 public initialValue;
     uint256 public addedValue;
+    uint256 public answerValue;
 
     string public title;
     string public description;
@@ -38,12 +39,15 @@ contract Question {
         topic = _topic;
         title = _title;
         description = _description;
+        initialValue = msg.value;
+        addedValue = 0;
+        answerValue = 0;
     }
 
     function makeAnswer(string _title, string _description) public payable {
         require(msg.value >= (initialValue/10), "Not enough value sent to answer question.");
         address newAnswer = (new Answer).value(msg.value)(_title, _description, owner, this);
-        answerIndex[newAnswer] = answers.push(newAnswer);
+        answerIndex[newAnswer] = answers.push(newAnswer) - 1;
     }
 
     function acceptAnswer(address acceptedAnswer) public onlyOwner {
@@ -59,7 +63,10 @@ contract Question {
     }
 
     function makeUrget() public payable {
-
+        require(msg.value >= ForumManager(forum).urgentPrice(), "Not enough value sent to make question urgent");
+        require(!isUrgent, "This question is already urgent");
+        isUrgent = true;
+        Topic(topic).addUrgent();
     }
 
     function getTitle() public view returns(string) {
@@ -72,5 +79,14 @@ contract Question {
 
     function getValue() public view returns(uint256) {
         return initialValue + addedValue;
+    }
+
+    function transferAnswerFunds() public payable returns(bool){
+        answerValue += msg.value;
+        return true;
+    }
+
+    function collectAnswerFunds(address answerToCollect) public {
+        Answer(answerToCollect).withdrawValue();
     }
 }
