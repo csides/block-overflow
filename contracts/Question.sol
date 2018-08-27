@@ -35,6 +35,7 @@ contract Question {
     public 
     payable 
     {
+        owner = msg.sender;
         forum = _forum;
         topic = _topic;
         title = _title;
@@ -54,6 +55,10 @@ contract Question {
         Answer(acceptedAnswer).accept();
     }
 
+    function listAnswers() public view returns(address[]) {
+        return answers;
+    }
+
     function rejectAnswer(address rejectedAnswer) public onlyOwner {
         Answer(rejectedAnswer).reject();
     }
@@ -62,12 +67,12 @@ contract Question {
         addedValue += msg.value;
     }
 
-    function makeUrget() public payable {
-        require(msg.value >= ForumManager(forum).urgentPrice(), "Not enough value sent to make question urgent");
-        require(!isUrgent, "This question is already urgent");
-        isUrgent = true;
-        Topic(topic).addUrgent();
-    }
+    // function makeUrget() public payable {
+    //     require(msg.value >= ForumManager(forum).urgentPrice(), "Not enough value sent to make question urgent");
+    //     require(!isUrgent, "This question is already urgent");
+    //     isUrgent = true;
+    //     Topic(topic).addUrgent();
+    // }
 
     function getTitle() public view returns(string) {
         return title;
@@ -86,6 +91,7 @@ contract Question {
         return true;
     }
 
+    // TODO: Implement control over who can call this
     function collectAnswerFunds(address answerToCollect) public {
         Answer(answerToCollect).withdrawValue();
     }

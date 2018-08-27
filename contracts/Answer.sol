@@ -1,7 +1,5 @@
 pragma solidity ^0.4.24;
 
-import {ForumManager} from "./ForumManager.sol";
-import {Topic} from "./Topic.sol";
 import {Question} from "./Question.sol";
 
 contract Answer {
@@ -27,7 +25,7 @@ contract Answer {
     constructor(string _title, string _description, address _questionOwner, address _parentQuestion) public payable {
         title = _title;
         description = _description;
-        owner = msg.sender;
+        owner = tx.origin;
         questionOwner = _questionOwner;
         parentQuestion = _parentQuestion;
         accepted = false;
@@ -52,13 +50,26 @@ contract Answer {
     }
 
     function accept() public onlyQuestion {
+        require(!accepted, "Question cannot already be accepted");
         accepted = true;
+        rejected = false;
+        contested = false;
         acceptedAt = now;
     }
 
+    function isAccepted() public view returns(bool) {
+        return accepted;
+    }
+
     function reject() public onlyQuestion {
+        require(!rejected, "Question cannot already be rejected");
         rejected = true;
+        accepted = false;
         rejectedAt = now;
+    }
+
+    function isRejected() public view returns(bool) {
+        return rejected;
     }
 
     function upvoteAnswer() public payable {
@@ -66,11 +77,18 @@ contract Answer {
     }
 
     function contestRejection() public onlyOwner {
+        require(rejected, "Question must be rejected");
         contested = true;
         contestedAt = now;
     }
 
+    function isContested() public view returns(bool) {
+        return contested;
+    }
+
     function withdrawValue() public onlyQuestion {
+        require(accepted || rejected, "The question must be accepted or rejected");
+        // require(acceptedAt / rejectedAt to be past certain time window);
         Question(parentQuestion).transferAnswerFunds.value(address(this).balance)();
     }
 

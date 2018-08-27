@@ -37,14 +37,18 @@ contract ForumManager {
 
     constructor(uint16 valueRate, uint16 urgentRate, uint16 topicRate, uint16 newUserRate) public payable {
         owner = msg.sender;
+        holdings[msg.sender] = msg.value;
+        usernames[msg.sender] = "owner";
         admins[owner] = true;
-        numAdmins = 1;
+        numAdmins += 1;
         activeHalted = false;
         withdrawalHalted = false;
         baseValueRatio = valueRate;
         baseUrgentRate = urgentRate;
         topicRatio = topicRate;
         newUserFee = newUserRate;
+        questionTotalValue = 10;
+        numQuestions = 1;
     }
 
     modifier onlyOwner() {
@@ -58,7 +62,7 @@ contract ForumManager {
     }
 
     modifier onlyUser() {
-        require(usernames[msg.sender].length > 0, "Only users may access this function");
+        require(usernames[msg.sender].length > 0 && !(blacklist[msg.sender]), "Only users may access this function");
         _;
     }
 
@@ -79,9 +83,23 @@ contract ForumManager {
         return topics;
     } 
 
-    function checkHoldings() public view onlyUser returns( uint256 userHoldings ) {
+    function getUsername(address user) public view returns(bytes32) {
+        return usernames[user];
+    }
+
+    function checkAdmin(address admin) public view returns(bool) {
+        return admins[admin];
+    }
+
+    function checkHoldings() public view onlyUser returns(uint256) {
         return holdings[msg.sender];
     }
+
+    // function withdrawHoldings() public onlyUser {
+    //     uint256 amountToSend = holdings[msg.sender];
+    //     holdings[msg.sender] = 0;
+    //     msg.sender.transfer(amountToSend);
+    // }
 
     function enrollUser(address newUser, bytes32 username) public payable {
         // They have sent a joining fee and are not already enrolled
@@ -136,7 +154,7 @@ contract ForumManager {
 
     function questionPrice() public view returns(uint256) {
         // Average question cost * multiplier
-        return (questionTotalValue / numQuestions) * (baseValueRatio / 100);
+        return uint256((100*questionTotalValue/numQuestions) * (baseValueRatio/100) / 100);
     }
 
     function urgentPrice() public view returns(uint256) {

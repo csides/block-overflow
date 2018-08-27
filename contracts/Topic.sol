@@ -52,9 +52,14 @@ contract Topic {
         questionNames[newQuestion] = name;
     }
 
-    function deleteQuestion(address deletedQuestion) public {
+    // Only to be called from web3
+    function getQuestionAddresses() public view returns(address[]) {
+        return questions;
+    } 
+    
+    // function deleteQuestion(address deletedQuestion) public {
 
-    }
+    // }
 
     function addAdmin(address newAdmin) public onlyOwner {
         admins[newAdmin] = true;
@@ -76,15 +81,15 @@ contract Topic {
         urgentIndex[msg.sender] = urgentQuestions.push(msg.sender) - 1;
     }
 
-    function removeUrgent() public ifNotHalted {
+    // function removeUrgent() public ifNotHalted {
 
-    }
+    // }
 
     function addContested() public onlyQuestion ifNotHalted {
         contestedIndex[msg.sender] = contestedQuestions.push(msg.sender) - 1;
     }
 
-    function removeContested() public onlyQuestion ifNotHalted {
+    // function removeContested() public onlyQuestion ifNotHalted {
 
-    }
+    // }
 }
