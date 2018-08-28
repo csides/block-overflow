@@ -14,14 +14,10 @@
 
 ## Installation
 Clone the repo from github.  
-Navigate into the repo directory.  
+Navigate into the repo directory (block_overflow).  
 
-### To launch the front end node server (Not complete at all)
-npm run start
-
-Visit: 
-http://localhost:3000/
-To view the website.
+// I have found this takes away, and spits many many warning messages
+npm install
 
 ### To compile and deploy the contracts
 #### In one terminal window
@@ -31,6 +27,14 @@ ganache-cli
 truffle compile
 truffle migrate
 
+### To launch the front end node server (Not complete at all)
+npm run start
+
+Visit: 
+http://localhost:3000/
+To view the website.
+
 ### To run the testing suite
 truffle develop
 test
+
