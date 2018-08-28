@@ -19,6 +19,10 @@ Navigate into the repo directory.
 ### To launch the front end node server (Not complete at all)
 npm run start
 
+Visit: 
+http://localhost:3000/
+To view the website.
+
 ### To compile and deploy the contracts
 truffle develop
 compile
