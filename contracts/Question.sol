@@ -1,6 +1,5 @@
 pragma solidity ^0.4.24;
 
-import {ForumManager} from "./ForumManager.sol";
 import {Topic} from "./Topic.sol";
 import {Answer} from "./Answer.sol";
 
@@ -25,6 +24,7 @@ contract Question {
     bool public isUrgent;
 
     bool public answerContested;
+    address public acceptedAnswerOwner;
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the question owner may call this");
@@ -53,6 +53,7 @@ contract Question {
 
     function acceptAnswer(address acceptedAnswer) public onlyOwner {
         Answer(acceptedAnswer).accept();
+        acceptedAnswerOwner = Answer(acceptedAnswer).owner();
     }
 
     function listAnswers() public view returns(address[]) {

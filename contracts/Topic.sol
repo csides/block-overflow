@@ -1,6 +1,5 @@
 pragma solidity ^0.4.24;
 
-import {ForumManager} from "./ForumManager.sol";
 import {Question} from "./Question.sol";
 import {Answer} from "./Answer.sol";
 
@@ -9,8 +8,10 @@ contract Topic {
     address public owner;
     address public forum;
     bool public halted;
-
+    uint256 public questionPrice;
+    
     mapping(address => bool) public admins;
+    mapping(address => uint256) private holdings;
 
     address[] public questions;
     address[] public urgentQuestions;
@@ -38,15 +39,17 @@ contract Topic {
         if (!halted) _;
     }
 
-    constructor(address _forum) public payable {
+    constructor(address _forum, uint256 _questionPrice) public payable {
         owner = msg.sender;
+        questionPrice = _questionPrice;
         admins[owner] = true;
+        holdings[owner] = msg.value;
         forum = _forum;
         halted = false;
     }
 
     function makeQuestion(bytes24 name, string title, string description) public payable ifNotHalted {
-        require(msg.value >= (ForumManager)(forum).topicPrice(), "Not enough value sent to create a question");
+        require(msg.value >= questionPrice, "Not enough value sent to create a question");
         address newQuestion = (new Question).value(msg.value)(forum, this, title, description);
         questionIndex[newQuestion] = questions.push(newQuestion) - 1;
         questionNames[newQuestion] = name;
@@ -69,6 +72,10 @@ contract Topic {
         admins[adminToRemove] = false;
     }
 
+    function isAdmin(address adminAddress) public view returns(bool) {
+        return admins[adminAddress];
+    }
+
     function haltTopic() public onlyAdmin {
         halted = true;
     }
@@ -77,19 +84,17 @@ contract Topic {
         halted = false;
     }
 
-    function addUrgent() public onlyQuestion ifNotHalted {
-        urgentIndex[msg.sender] = urgentQuestions.push(msg.sender) - 1;
-    }
-
-    // function removeUrgent() public ifNotHalted {
-
-    // }
-
     function addContested() public onlyQuestion ifNotHalted {
         contestedIndex[msg.sender] = contestedQuestions.push(msg.sender) - 1;
     }
 
-    // function removeContested() public onlyQuestion ifNotHalted {
+    function checkHoldings(address userToCheck) public view returns(uint256) {
+        return holdings[userToCheck];
+    }
 
-    // }
+    function withdrawFunds() public ifNotHalted {
+        uint256 amountToWithdraw = holdings[msg.sender];
+        holdings[msg.sender] = 0;
+        msg.sender.transfer(amountToWithdraw);
+    }
 }

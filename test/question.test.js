@@ -37,34 +37,55 @@ contract('Question', function(accounts) {
     });
 
     context('in a full application', async function() {
+        // This will also test that making an answer works
         beforeEach(async function() {
-            // this.forum = await ForumManager.new(20, 3, 10, 5, {from: accounts[0], value: 100000000, gas: 500000, gasPrice: 100000000000});
-            // this.forum.enrollUser(accounts[0], "User 0", {from: accounts[0], value: 1000, gas: 10000});
-            // this.forum.enrollUser(accounts[1], "User 1", {from: accounts[1], value: 1000, gas: 10000});
-            // this.forum.enrollUser(accounts[2], "User 2", {from: accounts[2], value: 1000, gas: 10000});
-
-            // this.forum.makeTopic("Test Topic", {from: accounts[0], value: 10000});
-            // this.topicAddress = await this.forum.getTopicAddresses()[0];
-            // this.topic = web3.eth.contract(Topic.abi).at(this.topicAddress);
-
-            // this.topic.makeQuestion("Test", "Test Question", "Question Description", {from: accounts[1], value: 1000});
-            // this.questionAddress = await this.topic.getQuestionAddresses()[0];
-            // this.question = web3.eth.contract(Question.abi).at(this.questionAddress);
+            this.newQuestion = await Question.new(ZERO_ADDRESS, 
+                ZERO_ADDRESS, 
+                "This real question", 
+                "What could the answer be?", 
+                {from: accounts[0], value: 200000}
+            );
+            await this.newQuestion.makeAnswer("Answer!", 
+                "This will solve your problem!", 
+                {from: accounts[1], value: 60000}
+            );
+            await this.newQuestion.makeAnswer("Haha Spam!", 
+                "I will waste your time",
+                {from: accounts[2], value: 20000}
+            );
         });
 
-        // // Test answer selection
-        // it("should accept and reject answers", async function() {
-        // });
+        // Correctly list questions
+        it("should correctly list answers", async function() {
+            this.answerAddresses = await this.newQuestion.listAnswers();
+            assert.equal(this.answerAddresses.length, 2, "There should be two quest addresses returned");
+            assert(this.answerAddresses[0] != ZERO_ADDRESS, "Should return a real address");
+            assert(this.answerAddresses[1] != ZERO_ADDRESS, "Should return a real address")
+        });
 
-        // // Test making the question urgent
-        // it("should make a question urgent", async function() {
-        // });
+        // Test making accepting and rejecting answers
+        it("should accept and reject questions", async function() {
+            // Simply testing that there are no reverts here.
+            // We test the full functionality of this in the answer integration tests
+            this.answerAddresses = await this.newQuestion.listAnswers();
+            await this.newQuestion.rejectAnswer(this.answerAddresses[1], {from: accounts[0]});
+            await this.newQuestion.acceptAnswer(this.answerAddresses[0], {from: accounts[0]});
+        });
 
-        // it("should not make a question urgent without payment", async function() {
-        // });
+        // Test retrieving the answer's value (both accepted and rejected)
+        it("should retrieve stored answer value", async function() {
+            this.answerAddresses = await this.newQuestion.listAnswers();
+            await this.newQuestion.rejectAnswer(this.answerAddresses[1], {from: accounts[0]});
+            await this.newQuestion.acceptAnswer(this.answerAddresses[0], {from: accounts[0]});
 
-        // // Test retrieving the answer's value
-        // it("should retrieve stored answer value", async function() {
-        // });
+            await this.newQuestion.collectAnswerFunds(this.answerAddresses[0], {from: accounts[0]});
+            await this.newQuestion.collectAnswerFunds(this.answerAddresses[1], {from: accounts[0]});
+            const answer0Balance = await web3.eth.getBalance(this.answerAddresses[0]).valueOf();
+            const answer1Balance = await web3.eth.getBalance(this.answerAddresses[1]).valueOf();
+            const questionBalance = await web3.eth.getBalance(this.newQuestion.address).valueOf();
+            assert.equal(answer0Balance, 0, "The answer's balance should have been withdrawn");
+            assert.equal(answer1Balance, 0, "The answer's balance should have been withdrawn");
+            assert.equal(questionBalance, 280000, "The question's balance should have been updated with both questions");
+        });
     });
 });
