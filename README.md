@@ -16,7 +16,7 @@
 Clone the repo from github.  
 Navigate into the repo directory (block_overflow).  
 
-// I have found this takes away, and spits many many warning messages  
+// I have found this takes awhile, and spits many many warning messages  
 npm install
 
 ### To compile and deploy the contracts
