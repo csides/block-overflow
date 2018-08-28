@@ -2,6 +2,11 @@ pragma solidity ^0.4.24;
 
 import {Question} from "./Question.sol";
 
+/*
+    @title Answer 
+    @dev An answer for a question, which can then be accepted or rejected, and stores and transfers value
+    @dev Not all functions are commented
+*/
 contract Answer {
     address public owner;
     address public questionOwner;
@@ -21,7 +26,15 @@ contract Answer {
 
     uint256 initialValue;
     uint256 upvotedValue;
-
+    
+    /*
+      * @dev a payable function used to create an answer
+      * @dev migrate away from using tx.origin
+      * @param _title
+      * @param _description
+      * @param _questionOwner the address of the owner of the question
+      * @param _parentQuesion the address of the parent question contract  
+    */
     constructor(string _title, string _description, address _questionOwner, address _parentQuestion) public payable {
         title = _title;
         description = _description;
@@ -49,6 +62,9 @@ contract Answer {
         _;  
     }
 
+    /*
+      * @dev accept this answer (only called from parent question)
+    */
     function accept() public onlyQuestion {
         require(!accepted, "Question cannot already be accepted");
         accepted = true;
@@ -61,6 +77,9 @@ contract Answer {
         return accepted;
     }
 
+    /*
+      * @dev reject this answer (only called from parent question)
+    */
     function reject() public onlyQuestion {
         require(!rejected, "Question cannot already be rejected");
         rejected = true;
@@ -72,10 +91,17 @@ contract Answer {
         return rejected;
     }
 
+    /*
+      * @dev add aditional value to this answer (anyone may call)
+    */
     function upvoteAnswer() public payable {
         upvotedValue += msg.value;
     }
 
+    /*
+      * @dev contest the rejection of this question (only from the quesiton owner)
+      * @dev the question must first be rejected
+    */
     function contestRejection() public onlyOwner {
         require(rejected, "Question must be rejected");
         contested = true;
@@ -86,6 +112,9 @@ contract Answer {
         return contested;
     }
 
+    /*
+      * @dev Withdraw the value from this question, eventually getting to topic level (only called form parent question)
+    */
     function withdrawValue() public onlyQuestion {
         require(accepted || rejected, "The question must be accepted or rejected");
         // require(acceptedAt / rejectedAt to be past certain time window);

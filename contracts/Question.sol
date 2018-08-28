@@ -3,6 +3,11 @@ pragma solidity ^0.4.24;
 import {Topic} from "./Topic.sol";
 import {Answer} from "./Answer.sol";
 
+/*
+    @title Topic 
+    @dev A question, which invites responses. The value stored within the question is later awarded to the accepted answer
+    @dev Not all functions are commented
+*/
 contract Question {
     address public owner;
     address public topic;
@@ -31,6 +36,13 @@ contract Question {
         _;
     }
 
+    /**
+      * @dev payable function intended to create a new question
+      * @param _forum Deprecated as of this project
+      * @param _topic Address of the controlling topic for this question
+      * @param _title The title of the question (short)
+      * @param _description A longer description of the details of the question
+    */
     constructor(address _forum, address _topic, string _title, string _description) 
     public 
     payable 
@@ -45,6 +57,11 @@ contract Question {
         answerValue = 0;
     }
 
+    /**
+      * @dev payable function to construct an answer for this question
+      * @param _title The title of the answer
+      * @param _description The main body of the answer
+    */
     function makeAnswer(string _title, string _description) public payable {
         require(msg.value >= (initialValue/10), "Not enough value sent to answer question.");
         address newAnswer = (new Answer).value(msg.value)(_title, _description, owner, this);
@@ -68,6 +85,7 @@ contract Question {
         addedValue += msg.value;
     }
 
+    // Incomplete function to make a question urgent for a price such that it gets answered sooner
     // function makeUrget() public payable {
     //     require(msg.value >= ForumManager(forum).urgentPrice(), "Not enough value sent to make question urgent");
     //     require(!isUrgent, "This question is already urgent");
@@ -87,11 +105,14 @@ contract Question {
         return initialValue + addedValue;
     }
 
+    // Payable method to recieve transfered funds from answer
+    // TODO: Implement control over who can call this
     function transferAnswerFunds() public payable returns(bool){
         answerValue += msg.value;
         return true;
     }
 
+    // Method to initial collection of answer funds
     // TODO: Implement control over who can call this
     function collectAnswerFunds(address answerToCollect) public {
         Answer(answerToCollect).withdrawValue();

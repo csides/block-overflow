@@ -26,4 +26,4 @@
     unless a condition was met, and thus failing silently was appropriate. In other cases, a loud failure was
     needed to alert the caller that the transaction had failed.
 ## Others:
-    Mortal contract, auto deprecation,  were not used.
+    Mortal contract, auto deprecation, etc were not used.

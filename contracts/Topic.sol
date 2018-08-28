@@ -3,7 +3,11 @@ pragma solidity ^0.4.24;
 import {Question} from "./Question.sol";
 import {Answer} from "./Answer.sol";
 
-
+/*
+    @title Topic 
+    @dev This contract is inteded to be a factory for questions, in addition to managing some overhead information
+    @dev Not all functions are commented
+*/
 contract Topic {
     address public owner;
     address public forum;
@@ -39,6 +43,11 @@ contract Topic {
         if (!halted) _;
     }
 
+    /*
+        * @dev a (payable) function writtin to create a new topic and initialize some basic values
+        * @param _forum Currently not in use, as the ForumManager contract was very buggy
+        * @param _questionPrice the base price a new question requires 
+    */
     constructor(address _forum, uint256 _questionPrice) public payable {
         owner = msg.sender;
         questionPrice = _questionPrice;
@@ -48,6 +57,12 @@ contract Topic {
         halted = false;
     }
 
+  /*
+        * @dev a (payable) function writtin to create a new question under this topic
+        * @param name a short name for the question
+        * @param title the title of the given question
+        * @param description the body of the question, containing most of the question details
+    */
     function makeQuestion(bytes24 name, string title, string description) public payable ifNotHalted {
         require(msg.value >= questionPrice, "Not enough value sent to create a question");
         address newQuestion = (new Question).value(msg.value)(forum, this, title, description);
@@ -59,10 +74,6 @@ contract Topic {
     function getQuestionAddresses() public view returns(address[]) {
         return questions;
     } 
-    
-    // function deleteQuestion(address deletedQuestion) public {
-
-    // }
 
     function addAdmin(address newAdmin) public onlyOwner {
         admins[newAdmin] = true;
@@ -92,6 +103,11 @@ contract Topic {
         return holdings[userToCheck];
     }
 
+    /*
+        * @dev the function for users to withdraw their value from this forum
+        * only executes if the contract is not halted
+        * currently, users can only withdraw all of their stored value
+    */
     function withdrawFunds() public ifNotHalted {
         uint256 amountToWithdraw = holdings[msg.sender];
         holdings[msg.sender] = 0;

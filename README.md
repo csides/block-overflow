@@ -24,9 +24,12 @@ http://localhost:3000/
 To view the website.
 
 ### To compile and deploy the contracts
-truffle develop
-compile
-migrate
+#### In one terminal window
+ganache-cli
+
+#### In another
+truffle compile
+truffle migrate
 
 ### To run the testing suite
 truffle develop
